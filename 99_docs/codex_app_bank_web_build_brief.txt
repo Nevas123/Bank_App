@@ -1,0 +1,472 @@
+App_Bank WEB BUILD BRIEF
+========================
+
+Goal
+----
+Build a small, realistic, bilingual banking-style MVP web application called App_Bank.
+This is NOT a real banking platform.
+It is a compact web app intended to feel real enough for demonstrations and future UI automation, while staying simple and deterministic.
+
+Important constraints
+---------------------
+- Frontend must be Angular.
+- Backend must be ASP.NET Core Minimal API.
+- No database.
+- No Entity Framework.
+- No ASP.NET Identity UI.
+- No external auth provider.
+- All state lives in memory.
+- Build only the web app for now. Ignore automation code.
+- Keep architecture clean, but intentionally small.
+
+Tech stack
+----------
+Frontend:
+- Angular SPA
+- standalone components
+- Angular Router
+- Angular Signals for lightweight UI/app state
+- Angular Reactive Forms for login + transfer forms
+- Angular HttpClient for API calls
+- SCSS preferred, or plain CSS with CSS variables
+
+Backend:
+- ASP.NET Core Minimal API
+- cookie-based authentication without full Identity
+- in-memory singleton state service
+- CORS configured for local Angular dev server
+- JSON APIs only
+
+High-level user flow
+--------------------
+1. User lands on /login.
+2. User signs in with seeded demo credentials.
+3. App loads authenticated context and goes to /dashboard.
+4. User can open profile modal.
+5. User can open exit dialog and either cancel or log out.
+6. User can start a transfer from dashboard.
+7. User fills the form and continues to confirmation.
+8. User confirms the transfer with a banking-like slide/toggle interaction.
+9. App shows success state.
+10. User returns to the dashboard.
+11. Balance is reduced and the new transaction appears at the top of the list.
+
+Main views
+----------
+1. Login page
+2. Dashboard
+3. Send Money form
+4. Confirmation / Success page
+
+Dialogs
+-------
+1. Profile modal
+2. Exit dialog
+
+Routes
+------
+- /login
+- /dashboard
+- /transfer
+- /transfer/confirm
+
+Routing rules
+-------------
+- /login is public.
+- /dashboard, /transfer, /transfer/confirm are protected.
+- If the user is not authenticated and tries to access a protected route, redirect to /login.
+- If the user is already authenticated and opens / or /login, redirect to /dashboard.
+
+Seeded demo credentials
+-----------------------
+Use exactly one seeded demo user:
+
+- fullName: Alex Morgan
+- email: alex.morgan@appbank.demo
+- phone: +34 600 123 456
+- password: Demo123!
+
+Seeded financial data
+---------------------
+- initialBalance: 12450.75 EUR
+- seededTransactions: include a few fixed rows
+- all seeded data must be deterministic
+- all dates may be fixed/static or generated from a fixed seed, but must not be random between runs
+
+Business behavior
+-----------------
+Dashboard:
+- balance is always visible at the top center
+- language switcher is always visible at the top right during the authenticated flow
+- sidebar is visible only on dashboard
+- dashboard main content shows:
+  - Latest Transactions title
+  - transactions table
+  - Send Money primary button
+
+Profile modal:
+- opens from profile bubble in sidebar
+- shows circular avatar placeholder
+- shows full name, email, phone
+- closable without navigation
+
+Exit dialog:
+- opens from Exit button in sidebar
+- message includes: Hasta la vista!
+- has cancel and confirm actions
+- confirm action logs the user out and sends the user back to /login
+
+Transfer form:
+- replaces dashboard center content or uses a dedicated route, but the visible UX must feel like the dashboard shell stays stable
+- sidebar is hidden
+- balance remains visible
+- language switcher remains visible
+- fields:
+  - Recipient Name
+  - Account Number
+  - Amount
+- actions:
+  - Cancel
+  - Continue
+
+Transfer validation:
+- recipient name is required
+- recipient name cannot be numeric-only
+- account number is required
+- amount is required
+- amount must parse as numeric
+- amount must be > 0
+- amount cannot exceed available balance
+
+Confirmation page:
+- summary shows recipient name, account number, amount
+- sidebar remains hidden
+- balance remains visible
+- language switcher remains visible
+- includes a banking-style slide/toggle confirmation control
+- label:
+  - English: Slide to confirm
+  - Spanish: Desliza para confirmar
+
+After successful transfer:
+- show success message
+  - English: Transfer completed
+  - Spanish: Transferencia completada
+- show action to return to dashboard
+  - English: Back to Main Menu
+  - Spanish: Volver al menú principal
+- reduce current balance by the transfer amount
+- prepend a new transaction row with status Completed
+
+Language support
+----------------
+Supported languages:
+- English (default)
+- Spanish
+
+Requirements:
+- language buttons:
+  - ENG
+  - ESP
+- selected language must be visibly highlighted
+- language selection must persist while navigating
+- login page must also support language switching
+- use a simple runtime translation dictionary, not a heavy extraction-based i18n system
+
+Visual direction
+----------------
+Make it feel:
+- clean
+- modern
+- banking-like
+- warm but trustworthy
+- simple
+- deterministic
+
+Use this palette:
+- Background: #F8F5F0
+- Surface: #FCFCFB
+- Primary: #1D4ED8
+- Primary Hover: #1E40AF
+- Text Main: #0F172A
+- Text Secondary: #475569
+- Wood Accent: #D6C2A1
+- Caoba Accent: #7B2D26
+- Success: #15803D
+- Error: #DC2626
+
+Suggested frontend structure
+----------------------------
+Create a frontend project structure similar to:
+
+src/
+  app/
+    core/
+      guards/
+      interceptors/
+      models/
+      services/
+      stores/
+    shared/
+      components/
+      ui/
+    features/
+      auth/
+        login-page/
+      dashboard/
+        dashboard-page/
+        transactions-table/
+        profile-modal/
+        exit-dialog/
+      transfer/
+        transfer-form-page/
+        transfer-confirm-page/
+        slide-to-confirm/
+      layout/
+        app-shell/
+        sidebar/
+        header-balance/
+        language-switcher/
+    app.routes.ts
+    app.config.ts
+    app.component.ts
+  styles/
+
+Suggested frontend services / stores
+------------------------------------
+Core services:
+- AuthService
+- ProfileApiService
+- TransactionsApiService
+- TransferApiService
+- LanguageService
+
+Signal-based stores:
+- SessionStore
+  - isAuthenticated
+  - currentUser
+  - balance
+  - transactions
+  - currentLanguage
+
+Behavior:
+- SessionStore should expose signals/computed state.
+- API services should handle HttpClient calls.
+- Reactive Forms should be used for login and transfer forms.
+- Use route guards for protected routes.
+- Use an HTTP interceptor or equivalent mechanism so the SPA handles 401 by redirecting to /login.
+
+Suggested backend structure
+---------------------------
+Create a backend project similar to:
+
+AppBank.Api/
+  Program.cs
+  Endpoints/
+    AuthEndpoints.cs
+    ProfileEndpoints.cs
+    TransactionsEndpoints.cs
+    TransferEndpoints.cs
+  Domain/
+    Models/
+    Services/
+  Infrastructure/
+    Seed/
+  Contracts/
+
+Use Minimal API route mapping with clean extension methods or grouped route mapping.
+
+Authentication approach
+-----------------------
+Use cookie auth with a single hardcoded seeded user in memory.
+No registration flow.
+No password reset flow.
+No roles needed.
+No real user store needed.
+
+Required backend endpoints
+--------------------------
+POST /api/auth/login
+Request JSON:
+{
+  "email": "alex.morgan@appbank.demo",
+  "password": "Demo123!"
+}
+
+Response on success:
+- 200 OK
+- authenticated cookie set
+- response body can optionally include a lightweight session payload
+
+Response on failure:
+- 401 Unauthorized
+- JSON error message
+
+POST /api/auth/logout
+- requires authenticated user
+- clears auth cookie
+- returns 204 or 200
+
+GET /api/auth/me
+- requires authenticated user
+- returns authenticated summary:
+  {
+    "fullName": "Alex Morgan",
+    "email": "alex.morgan@appbank.demo"
+  }
+
+GET /api/profile
+- requires authenticated user
+- returns:
+  {
+    "fullName": "Alex Morgan",
+    "email": "alex.morgan@appbank.demo",
+    "phone": "+34 600 123 456",
+    "avatarUrl": null
+  }
+
+GET /api/transactions
+- requires authenticated user
+- returns:
+  {
+    "balance": 12450.75,
+    "currency": "EUR",
+    "items": [
+      {
+        "date": "2026-03-28",
+        "recipient": "City Rent",
+        "amount": -950.00,
+        "status": "Completed"
+      }
+    ]
+  }
+
+POST /api/transfers
+- requires authenticated user
+- request:
+  {
+    "recipientName": "Sarah Lopez",
+    "accountNumber": "ES911234567890123456",
+    "amount": 250.00
+  }
+
+Server-side transfer rules:
+- recipientName required
+- recipientName cannot be numeric-only
+- accountNumber required
+- amount > 0
+- amount <= current balance
+
+Success response:
+{
+  "success": true,
+  "newBalance": 12200.75,
+  "transaction": {
+    "date": "2026-04-06",
+    "recipient": "Sarah Lopez",
+    "amount": -250.00,
+    "status": "Completed"
+  }
+}
+
+Error response example:
+{
+  "success": false,
+  "errors": {
+    "amount": ["Amount cannot exceed available balance."]
+  }
+}
+
+Optional development endpoint
+-----------------------------
+POST /api/dev/reset
+- development only
+- resets in-memory state back to the original seed
+
+Frontend API integration expectations
+-------------------------------------
+On app start:
+- check auth status via /api/auth/me
+- if authenticated, hydrate session data
+- if not authenticated, stay on /login
+
+After login:
+- call /api/auth/login
+- then call /api/profile
+- then call /api/transactions
+- then navigate to /dashboard
+
+On logout:
+- call /api/auth/logout
+- clear store
+- navigate to /login
+
+On transfer submit:
+- validate client-side first
+- POST /api/transfers
+- update store from server response
+- navigate to success state
+- do not perform optimistic updates before success
+
+UI copy
+-------
+English:
+- Sign In
+- Latest Transactions
+- Send Money
+- Cancel
+- Continue
+- Slide to confirm
+- Transfer completed
+- Back to Main Menu
+- Main Menu
+- Exit
+
+Spanish:
+- Iniciar sesión
+- Últimos movimientos
+- Enviar dinero
+- Cancelar
+- Continuar
+- Desliza para confirmar
+- Transferencia completada
+- Volver al menú principal
+- Menú principal
+- Salir
+
+Design / layout rules
+---------------------
+- balance block stays visually fixed in the top center across dashboard, transfer form, and confirmation
+- language switcher stays in the top right across login and authenticated flows
+- sidebar only appears on dashboard
+- avoid noisy animations
+- subtle transitions are acceptable, but keep behavior deterministic
+- use white cards on light warm background
+- use rounded corners and soft shadows
+- keep spacing professional and consistent
+
+What NOT to build
+-----------------
+- no database
+- no registration
+- no forgot-password
+- no account settings page
+- no notifications system
+- no admin panel
+- no complex state library like NgRx
+- no SSR
+- no PWA requirements
+- no real banking integrations
+
+Definition of done
+------------------
+The web app is complete when:
+- login works with the seeded demo user
+- protected routes are enforced
+- dashboard renders seeded profile + seeded transactions
+- language switching works in English and Spanish
+- transfer form validates correctly
+- confirmation page shows the entered data
+- successful transfer updates balance and transactions
+- logout works through the exit dialog
+- the app can be run locally as Angular frontend + ASP.NET Core backend with no database setup
